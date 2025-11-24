@@ -2,7 +2,7 @@ name: TVBoxOS CI
 
 on:
   schedule:
-    - cron: '0 13 1 * *'  # 每月 1 号 13:00
+    - cron: '0 13 1 * *'
   workflow_dispatch:
     inputs:
       rebuild:
@@ -24,18 +24,13 @@ jobs:
           - userName: q215613905
             repoName: TVBoxOS
             branchName: main
+
     steps:
-      # -----------------------------
-      # 1. Checkout
-      # -----------------------------
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # -----------------------------
-      # 2. Check New Commit
-      # -----------------------------
       - name: Check New Commit
         run: |
           upStream=https://github.com/${{ matrix.userName }}/${{ matrix.repoName }}
@@ -50,9 +45,6 @@ jobs:
           fi
           echo "commit=$commit"
 
-      # -----------------------------
-      # 3. Checkout Source Code
-      # -----------------------------
       - name: Checkout Source Code
         if: ${{ env.commit }}
         run: |
@@ -61,62 +53,41 @@ jobs:
           git checkout ${{ env.commit }}
           echo "tag=$(git log --date=format:'%Y%m%d-%H%M' --pretty=format:%cd ${{ env.commitS }} -1)" >> $GITHUB_ENV
 
-      # -----------------------------
-      # 4. Extra Modify
-      # -----------------------------
       - name: Extra Modify
         if: ${{ env.commit }}
         working-directory: TVBoxOSC
         run: |
-          # 修改 VersionName
           sed -i "/versionName/s#[0-9a-zA-Z_\.\'\"-]\+\$#\'${{ env.tag }}\'#" app/build.gradle
           sed -i "/android:text=/s#=\"#=\"${{ env.tag }}\\\\n\\\\n#" app/src/main/res/layout/dialog_about.xml
-          # crosswalk 防挂
           if grep -q 'crosswalk' build.gradle; then
             sed -i "/crosswalk/a\        maven { url 'https://o0halflife0o.github.io/crosswalk/releases/crosswalk/android/maven2' }" build.gradle
           else
             sed -i "/jitpack.io/a\        maven { url 'https://o0halflife0o.github.io/crosswalk/releases/crosswalk/android/maven2' }" build.gradle
           fi
 
-      # -----------------------------
-      # 5. Compress Source Code
-      # -----------------------------
       - name: Compress Source Code
         if: ${{ env.commit }}
         working-directory: TVBoxOSC
         run: |
           tar -cJf sourceCode-${{ env.commitS }}.tar.xz --exclude=.git --exclude=.github *
 
-      # -----------------------------
-      # 6. Release Apk Sign
-      # -----------------------------
       - name: Release Apk Sign
         if: ${{ env.commit }}
         working-directory: TVBoxOSC
         run: |
-          # 这里省略原有签名逻辑，保留你已有内容
           echo "Signing setup done"
 
-      # -----------------------------
-      # 7. Create local.properties
-      # -----------------------------
       - name: Create local.properties
         if: ${{ env.commit }}
         working-directory: TVBoxOSC
         run: |
           echo "# auto-generated for CI" > local.properties
 
-      # -----------------------------
-      # 8. Setup Python (Linux CI)
-      # -----------------------------
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      # -----------------------------
-      # 9. Cache pip and Gradle
-      # -----------------------------
       - name: Cache pip
         uses: actions/cache@v3
         with:
@@ -135,15 +106,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      # -----------------------------
-      # 10. Setup Gradle
-      # -----------------------------
       - uses: gradle/actions/setup-gradle@v4
         if: ${{ env.commit }}
 
-      # -----------------------------
-      # 11. Build With Gradle
-      # -----------------------------
       - name: Build With Gradle
         if: ${{ env.commit }}
         working-directory: TVBoxOSC
@@ -151,9 +116,6 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease --build-cache --parallel --daemon --warning-mode all
 
-      # -----------------------------
-      # 12. Prepare App / Upload Artifact
-      # -----------------------------
       - name: Prepare App
         if: ${{ env.commit }}
         working-directory: TVBoxOSC
