@@ -10,12 +10,18 @@ android {
         minSdkVersion 19
         targetSdkVersion 28
         ndk {
-            //abiFilters 'arm64-v8a'
-            //noinspection ChromeOsAbiSupport
             abiFilters "armeabi-v7a"
         }
+
         python {
-            buildPython("D:/Programs/Python/Python38/python.exe")
+            if (System.properties['os.name'].toLowerCase().contains("windows")) {
+                // Windows 本地构建（你电脑用）
+                buildPython("D:/Programs/Python/Python38/python.exe")
+            } else {
+                // GitHub Actions / Linux 构建
+                buildPython("python3")
+            }
+
             pip {
                 install "lxml"
                 install "ujson"
@@ -23,8 +29,8 @@ android {
                 install "requests"
                 install "jsonpath"
                 install "cachetools"
-                install 'pycryptodome'
-                install 'beautifulsoup4'
+                install "pycryptodome"
+                install "beautifulsoup4"
             }
         }
     }
@@ -32,7 +38,6 @@ android {
     buildTypes {
         all {
             ndk {
-                //noinspection ChromeOsAbiSupport
                 abiFilters 'armeabi-v7a'
             }
         }
@@ -41,22 +46,21 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
     sourceSets {
-        main{
-            // Android代码模块
+        main {
             setRoot "src/main"
-            // Python代码模块，也就是你的Python源码所在项目中的文件夹
             python.srcDirs = ["src/python"]
         }
     }
+
     buildToolsVersion '30.0.3'
 }
 
 dependencies {
-
 }
