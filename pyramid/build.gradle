@@ -15,10 +15,10 @@ android {
 
         python {
             if (System.properties['os.name'].toLowerCase().contains("windows")) {
-                // Windows 本地构建（你电脑用）
+                // Windows 本地构建
                 buildPython("D:/Programs/Python/Python38/python.exe")
             } else {
-                // GitHub Actions / Linux 构建
+                // Linux / CI 构建
                 buildPython("python3")
             }
 
